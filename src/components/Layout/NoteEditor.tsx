@@ -22,14 +22,29 @@ import {
   Edit3, 
   ArrowLeft,
   FileText,
-  Plus
+  Plus,
+  Type,
+  Code2
 } from 'lucide-react';
 import { formatDate } from '../../utils/date';
 import { getThemeClasses } from '../../utils/theme';
+import { isHtmlContent, htmlToPlainText, plainTextToHtml } from '../../utils/contentUtils';
 import { ValidationErrors } from '../../types';
 import ThemeToggle from '../ThemeToggle/ThemeToggle';
+import RichTextEditor from '../Editor/RichTextEditor';
+import PlainTextEditor from '../Editor/PlainTextEditor';
 
-const NoteEditor: React.FC = () => {
+interface NoteEditorProps {
+  onBackToList?: () => void;
+  showBackButton?: boolean;
+  isMobile?: boolean;
+}
+
+const NoteEditor: React.FC<NoteEditorProps> = ({ 
+  onBackToList, 
+  showBackButton = false, 
+  isMobile = false 
+}) => {
   const dispatch = useDispatch();
   const { 
     notes, 
@@ -45,6 +60,7 @@ const NoteEditor: React.FC = () => {
   const [tagsInput, setTagsInput] = useState('');
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [showMobileNotesList, setShowMobileNotesList] = useState(false);
+  const [isRichTextMode, setIsRichTextMode] = useState(true);
   const titleRef = useRef<HTMLInputElement>(null);
   const themeClasses = getThemeClasses(theme);
 
@@ -86,6 +102,13 @@ const NoteEditor: React.FC = () => {
     }
   }, [isCreatingNote]);
 
+  // Set editor mode based on content format when editing an existing note
+  useEffect(() => {
+    if (currentNote?.content && !isCreatingNote) {
+      setIsRichTextMode(isHtmlContent(currentNote.content));
+    }
+  }, [currentNote?.id, isCreatingNote]);
+
   const validateNote = (title: string, content: string): ValidationErrors => {
     const errors: ValidationErrors = {};
     if (!title.trim()) {
@@ -121,6 +144,10 @@ const NoteEditor: React.FC = () => {
         content,
         tags,
       }));
+      // On mobile, go back to notes list after creating
+      if (isMobile && onBackToList) {
+        onBackToList();
+      }
     } else if (selectedNoteId) {
       dispatch(updateNote({
         id: selectedNoteId,
@@ -136,6 +163,10 @@ const NoteEditor: React.FC = () => {
   const handleCancel = () => {
     setErrors({});
     dispatch(cancelEditing());
+    // On mobile, go back to notes list when canceling
+    if (isMobile && onBackToList) {
+      onBackToList();
+    }
   };
 
   const handleEdit = () => {
@@ -189,23 +220,48 @@ const NoteEditor: React.FC = () => {
     return currentView === 'archived' ? 'Archived Notes' : 'All Notes';
   };
 
+  const handleEditorModeToggle = () => {
+    if (!currentNote) return;
+    
+    let convertedContent = currentNote.content || '';
+    
+    if (isRichTextMode) {
+      // Converting from rich text to plain text
+      convertedContent = htmlToPlainText(convertedContent);
+    } else {
+      // Converting from plain text to rich text
+      convertedContent = plainTextToHtml(convertedContent);
+    }
+    
+    dispatch(setEditingNote({
+      ...currentNote,
+      content: convertedContent,
+    }));
+    
+    setIsRichTextMode(!isRichTextMode);
+  };
+
   // Mobile Notes List View
   if (showMobileNotesList) {
     return (
       <div className={`flex-1 ${themeClasses.surface} flex flex-col`}>
         {/* Mobile Header */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{getViewTitle()}</h2>
-          <div className="flex items-center gap-2">
-            {currentView !== 'archived' && (
-              <button
-                onClick={handleCreateNote}
-                className={`p-2 ${themeClasses.primary} text-white rounded-lg hover:opacity-90 transition-opacity`}
-              >
-                <Plus className="w-5 h-5" />
-              </button>
-            )}
-            <ThemeToggle />
+        <div className="p-4 sm:p-6 lg:p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg sm:text-xl lg:text-lg font-semibold truncate">{getViewTitle()}</h2>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {currentView !== 'archived' && (
+                <button
+                  onClick={handleCreateNote}
+                  className={`p-2 ${themeClasses.primaryBg} text-white rounded-lg hover:opacity-90 transition-opacity`}
+                >
+                  <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+              )}
+              <ThemeToggle />
+            </div>
           </div>
         </div>
 
@@ -271,13 +327,13 @@ const NoteEditor: React.FC = () => {
     return (
       <div className={`flex-1 ${themeClasses.surface} flex flex-col`}>
         {/* Mobile Header */}
-        <div className="md:hidden p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+        <div className="md:hidden p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <button
             onClick={() => setShowMobileNotesList(true)}
             className="flex items-center gap-2 text-gray-600 dark:text-gray-300"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span>{getViewTitle()}</span>
+            <span className="text-sm sm:text-base">{getViewTitle()}</span>
           </button>
           <ThemeToggle />
         </div>
@@ -298,101 +354,115 @@ const NoteEditor: React.FC = () => {
   return (
     <div className={`flex-1 ${themeClasses.surface} flex flex-col`}>
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-        {/* Mobile Back Button */}
-        <div className="md:hidden flex items-center gap-4">
-          <button
-            onClick={() => setShowMobileNotesList(true)}
-            className="p-1 text-gray-600 dark:text-gray-300"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <span className="text-sm text-gray-500">Go Back</span>
-        </div>
-
-        {/* Desktop Header Info */}
-        <div className="hidden md:flex items-center gap-4">
-          {currentNote?.tags && currentNote.tags.length > 0 && (
-            <div className="flex items-center gap-2">
-              <Tag className="w-4 h-4 text-gray-400" />
-              <div className="flex gap-1">
-                {currentNote.tags.map((tag, index) => (
-                  <span
-                    key={index}
-                    className={`px-2 py-1 rounded text-xs ${themeClasses.primary} bg-opacity-10 ${themeClasses.primary}`}
-                  >
-                    {tag}
-                  </span>
-                ))}
+      <div className="p-4 sm:p-6 lg:p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between">
+          {/* Left Section - Back Button or Empty */}
+          <div className="flex items-center min-w-0 flex-1">
+            {showBackButton && (
+              <div className="flex items-center gap-2 sm:gap-3">
+                <button
+                  onClick={onBackToList}
+                  className="p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-300"
+                >
+                  <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+                <span className="text-sm sm:text-base text-gray-500 hidden xs:inline">Go Back</span>
               </div>
-            </div>
-          )}
-          
-          {currentNote?.updatedAt && !isCreatingNote && (
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Calendar className="w-4 h-4" />
-              <span>Last edited {formatDate(currentNote.updatedAt)}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2">
-          {/* Mobile Theme Toggle */}
-          <div className="md:hidden">
-            <ThemeToggle />
+            )}
+            
+            {/* Desktop Header Info - Tags and Date */}
+            {!showBackButton && (
+              <div className="hidden lg:flex items-center gap-4 min-w-0 flex-1">
+                {currentNote?.tags && currentNote.tags.length > 0 && (
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Tag className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <div className="flex gap-1 flex-wrap min-w-0">
+                      {currentNote.tags.slice(0, 3).map((tag, index) => (
+                        <span
+                          key={index}
+                          className={`px-2 py-1 rounded text-xs ${themeClasses.primary} bg-opacity-10 ${themeClasses.primary} whitespace-nowrap`}
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                      {currentNote.tags.length > 3 && (
+                        <span className="px-2 py-1 rounded text-xs bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-400">
+                          +{currentNote.tags.length - 3}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {currentNote?.updatedAt && !isCreatingNote && (
+                  <div className="flex items-center gap-2 text-sm text-gray-500 flex-shrink-0">
+                    <Calendar className="w-4 h-4" />
+                    <span className="hidden xl:inline">Last edited {formatDate(currentNote.updatedAt)}</span>
+                    <span className="xl:hidden">{formatDate(currentNote.updatedAt)}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {isEditing ? (
-            <>
-              <button
-                onClick={handleSave}
-                className={`flex items-center gap-2 px-3 py-1.5 ${themeClasses.primaryBg} text-white rounded-lg hover:opacity-90 transition-opacity text-sm font-medium`}
-              >
-                <Save className="w-4 h-4" />
-                <span className="hidden sm:inline">Save Note</span>
-              </button>
-              <button
-                onClick={handleCancel}
-                className="flex items-center gap-2 px-3 py-1.5 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm font-medium"
-              >
-                <X className="w-4 h-4" />
-                <span className="hidden sm:inline">Cancel</span>
-              </button>
-            </>
-          ) : (
-            selectedNote && (
+          {/* Right Section - Action Buttons */}
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            {/* Mobile Theme Toggle */}
+            <div className="md:hidden">
+              <ThemeToggle />
+            </div>
+
+            {isEditing ? (
               <>
                 <button
-                  onClick={handleEdit}
-                  className={`flex items-center gap-2 px-3 py-1.5 ${themeClasses.primaryBg} text-white rounded-lg hover:opacity-90 transition-opacity text-sm font-medium`}
+                  onClick={handleSave}
+                  className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 ${themeClasses.primaryBg} text-white rounded-lg hover:opacity-90 transition-opacity text-sm font-medium`}
                 >
-                  <Edit3 className="w-4 h-4" />
-                  <span className="hidden sm:inline">Edit Note</span>
+                  <Save className="w-4 h-4" />
+                  <span className="hidden sm:inline lg:hidden xl:inline">Save</span>
                 </button>
                 <button
-                  onClick={handleArchiveToggle}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
+                  onClick={handleCancel}
+                  className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm font-medium"
                 >
-                  {selectedNote.isArchived ? (
-                    <ArchiveRestore className="w-4 h-4" />
-                  ) : (
-                    <Archive className="w-4 h-4" />
-                  )}
-                  <span className="hidden sm:inline">
-                    {selectedNote.isArchived ? 'Unarchive' : 'Archive'}
-                  </span>
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/30 transition-colors text-sm"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">Delete</span>
+                  <X className="w-4 h-4" />
+                  <span className="hidden sm:inline lg:hidden xl:inline">Cancel</span>
                 </button>
               </>
-            )
-          )}
+            ) : (
+              selectedNote && (
+                <>
+                  <button
+                    onClick={handleEdit}
+                    className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 ${themeClasses.primaryBg} text-white rounded-lg hover:opacity-90 transition-opacity text-sm font-medium`}
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    <span className="hidden sm:inline lg:hidden xl:inline">Edit</span>
+                  </button>
+                  <button
+                    onClick={handleArchiveToggle}
+                    className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
+                  >
+                    {selectedNote.isArchived ? (
+                      <ArchiveRestore className="w-4 h-4" />
+                    ) : (
+                      <Archive className="w-4 h-4" />
+                    )}
+                    <span className="hidden lg:inline xl:hidden">
+                      {selectedNote.isArchived ? 'Restore' : 'Archive'}
+                    </span>
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/30 transition-colors text-sm"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span className="hidden lg:inline xl:hidden">Delete</span>
+                  </button>
+                </>
+              )
+            )}
+          </div>
         </div>
       </div>
 
@@ -431,16 +501,48 @@ const NoteEditor: React.FC = () => {
               />
             </div>
 
+            {/* Editor Mode Toggle */}
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Content
+              </label>
+              <div className="flex items-center gap-2">
+                <span className={`text-sm ${!isRichTextMode ? 'text-gray-500' : 'text-gray-900 dark:text-gray-100'}`}>
+                  Rich Text
+                </span>
+                <button
+                  onClick={handleEditorModeToggle}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    isRichTextMode ? themeClasses.primaryBg : 'bg-gray-200 dark:bg-gray-600'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      isRichTextMode ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className={`text-sm ${isRichTextMode ? 'text-gray-500' : 'text-gray-900 dark:text-gray-100'}`}>
+                  Plain Text
+                </span>
+              </div>
+            </div>
+
             {/* Content Input */}
             <div className="flex-1">
-              <textarea
-                placeholder="Start writing your note..."
-                value={currentNote?.content || ''}
-                onChange={(e) => handleContentChange(e.target.value)}
-                className={`w-full h-96 p-0 bg-transparent border-none outline-none resize-none placeholder-gray-400 leading-relaxed ${
-                  errors.content ? 'text-red-500' : ''
-                }`}
-              />
+              {isRichTextMode ? (
+                <RichTextEditor
+                  content={currentNote?.content || ''}
+                  onChange={handleContentChange}
+                  placeholder="Start writing your note..."
+                />
+              ) : (
+                <PlainTextEditor
+                  content={currentNote?.content || ''}
+                  onChange={handleContentChange}
+                  placeholder="Start writing your note..."
+                />
+              )}
               {errors.content && (
                 <p className="text-red-500 text-sm mt-1">{errors.content}</p>
               )}
@@ -477,9 +579,15 @@ const NoteEditor: React.FC = () => {
               </div>
 
               <div className="prose prose-lg max-w-none dark:prose-invert">
-                <pre className="whitespace-pre-wrap font-sans leading-relaxed">
-                  {currentNote.content}
-                </pre>
+                {currentNote.content && isHtmlContent(currentNote.content) ? (
+                  // Rich text content (HTML)
+                  <div dangerouslySetInnerHTML={{ __html: currentNote.content }} />
+                ) : (
+                  // Plain text content
+                  <pre className="whitespace-pre-wrap font-sans leading-relaxed">
+                    {currentNote.content || ''}
+                  </pre>
+                )}
               </div>
             </div>
           )

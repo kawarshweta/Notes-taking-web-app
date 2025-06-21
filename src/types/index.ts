@@ -17,11 +17,14 @@ export interface AppState {
   theme: Theme;
   isCreatingNote: boolean;
   editingNote: Partial<Note> | null;
+  sortBy: 'updated' | 'created' | 'alphabetical' | 'tags';
+  autoSave: boolean;
+  compactView: boolean;
 }
 
 export interface Theme {
-  color: 'blue' | 'purple' | 'green' | 'orange';
-  font: 'inter' | 'roboto' | 'system';
+  color: 'blue' | 'purple' | 'green' | 'orange' | 'pink' | 'indigo' | 'teal' | 'red' | 'yellow' | 'cyan';
+  font: 'inter' | 'roboto' | 'system' | 'open-sans' | 'source-sans' | 'poppins' | 'lato' | 'montserrat';
   mode: 'light' | 'dark';
 }
 

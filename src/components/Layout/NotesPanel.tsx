@@ -1,40 +1,51 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useContext } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
 import { setSelectedNoteId, setSearchQuery, startCreatingNote } from '../../store/notesSlice';
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, ArrowLeft } from 'lucide-react';
 import { formatDate } from '../../utils/date';
 import { getThemeClasses } from '../../utils/theme';
+import { sortNotes } from '../../utils/sorting';
 import NoteCard from '../NoteCard/NoteCard';
 import { Note } from '../../types';
+import { TagFilterContext } from './Layout';
 
-const NotesPanel: React.FC = () => {
+interface NotesPanelProps {
+  onNoteSelect?: () => void;
+  onBackToList?: () => void;
+  showBackButton?: boolean;
+  isMobile?: boolean;
+}
+
+const NotesPanel: React.FC<NotesPanelProps> = ({ 
+  onNoteSelect, 
+  onBackToList, 
+  showBackButton = false, 
+  isMobile = false 
+}) => {
   const dispatch = useDispatch();
   const { 
     notes, 
     searchQuery, 
-    selectedTag, 
     selectedNoteId, 
     currentView, 
     theme,
-    isCreatingNote 
+    isCreatingNote,
+    sortBy,
+    compactView
   } = useSelector((state: RootState) => state.notes);
+  
+  const { selectedTag } = useContext(TagFilterContext);
   
   const themeClasses = getThemeClasses(theme);
 
   const filteredNotes = useMemo(() => {
-    console.log('NotesPanel - Filtering with:', { selectedTag, currentView, searchQuery });
-    
     let filtered = notes.filter((note: Note) => 
       currentView === 'archived' ? note.isArchived : !note.isArchived
     );
 
-    console.log('NotesPanel - After view filter:', filtered.length);
-
     if (selectedTag) {
-      console.log('NotesPanel - Filtering by tag:', selectedTag);
       filtered = filtered.filter((note: Note) => note.tags.includes(selectedTag));
-      console.log('NotesPanel - After tag filter:', filtered.length);
     }
 
     if (searchQuery.trim()) {
@@ -46,15 +57,22 @@ const NotesPanel: React.FC = () => {
       );
     }
 
-    return filtered.sort((a: Note, b: Note) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-  }, [notes, currentView, selectedTag, searchQuery]);
+    return sortNotes(filtered, sortBy);
+  }, [notes, currentView, selectedTag, searchQuery, sortBy]);
+
+
 
   const handleNoteSelect = (noteId: string) => {
     dispatch(setSelectedNoteId(noteId));
+    onNoteSelect?.();
   };
 
   const handleCreateNote = () => {
     dispatch(startCreatingNote());
+    // On mobile, switch to editor view when creating a note
+    if (isMobile) {
+      onNoteSelect?.();
+    }
   };
 
   const getViewTitle = () => {
@@ -67,24 +85,34 @@ const NotesPanel: React.FC = () => {
   };
 
   return (
-    <div className={`w-80 ${themeClasses.surface} border-r ${themeClasses.border} flex flex-col`}>
+    <div className={`${isMobile ? 'w-full' : 'w-80'} ${themeClasses.surface} ${!isMobile ? `border-r ${themeClasses.border}` : ''} flex flex-col`}>
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="p-4 sm:p-6 lg:p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold">{getViewTitle()}</h2>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            {showBackButton && (
+              <button
+                onClick={onBackToList}
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors mr-2 flex-shrink-0"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            )}
+            <h2 className="text-lg sm:text-xl lg:text-lg font-semibold truncate">{getViewTitle()}</h2>
+            <span className="text-sm text-gray-500 dark:text-gray-400 flex-shrink-0">
               ({getNotesCount()})
             </span>
           </div>
           {currentView !== 'archived' && (
-            <button
-              onClick={handleCreateNote}
-              className={`flex items-center gap-2 px-3 py-1.5 ${themeClasses.primaryBg} text-white rounded-lg hover:opacity-90 transition-opacity text-sm font-medium`}
-            >
-              <Plus className="w-4 h-4" />
-              New
-            </button>
+            <div className="flex-shrink-0">
+              <button
+                onClick={handleCreateNote}
+                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 ${themeClasses.primaryBg} text-white rounded-lg hover:opacity-90 transition-opacity text-sm font-medium`}
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">{isMobile ? 'New' : 'New'}</span>
+              </button>
+            </div>
           )}
         </div>
 
@@ -127,6 +155,7 @@ const NotesPanel: React.FC = () => {
                 note={note}
                 isSelected={note.id === selectedNoteId && !isCreatingNote}
                 onClick={() => handleNoteSelect(note.id)}
+                compact={compactView}
               />
             ))}
           </div>

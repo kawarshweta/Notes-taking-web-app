@@ -1,16 +1,27 @@
-import React from 'react';
+import React, { useContext, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
-import { setCurrentView, setSelectedTag } from '../../store/notesSlice';
-import { PenTool, FileText, Archive, Tag } from 'lucide-react';
+import { setCurrentView } from '../../store/notesSlice';
+import { PenTool, FileText, Archive, Tag, Settings, X } from 'lucide-react';
 import { getThemeClasses } from '../../utils/theme';
 import ThemeToggle from '../ThemeToggle/ThemeToggle';
 import { Note } from '../../types';
+import { TagFilterContext } from './Layout';
+import SettingsModal from '../Settings/Settings';
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  onClose?: () => void;
+  showCloseButton?: boolean;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ onClose, showCloseButton = false }) => {
   const dispatch = useDispatch();
-  const { notes, currentView, selectedTag, theme, searchQuery } = useSelector((state: RootState) => state.notes);
+  const { notes, currentView, theme, searchQuery } = useSelector((state: RootState) => state.notes);
+  const { selectedTag, setSelectedTag } = useContext(TagFilterContext);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const themeClasses = getThemeClasses(theme);
+
+
 
   const allTags = React.useMemo(() => {
     const tagSet = new Set<string>();
@@ -43,21 +54,20 @@ const Sidebar: React.FC = () => {
 
   const handleViewChange = (view: 'all' | 'archived') => {
     dispatch(setCurrentView(view));
-    dispatch(setSelectedTag(null));
+    setSelectedTag(null);
+    // Close sidebar on mobile after selection
+    onClose?.();
   };
 
   const handleTagSelect = (tag: string) => {
-    console.log('Sidebar - Tag clicked:', tag);
-    console.log('Sidebar - Current selectedTag:', selectedTag);
-    
     if (selectedTag === tag) {
-      console.log('Sidebar - Deselecting tag');
-      dispatch(setSelectedTag(null));
+      setSelectedTag(null);
     } else {
-      console.log('Sidebar - Selecting tag:', tag);
-      dispatch(setSelectedTag(tag));
+      setSelectedTag(tag);
       dispatch(setCurrentView('all'));
     }
+    // Close sidebar on mobile after selection
+    onClose?.();
   };
 
   // Calculate tag counts based on current filters
@@ -66,9 +76,20 @@ const Sidebar: React.FC = () => {
   };
 
   return (
-    <div className={`w-64 ${themeClasses.sidebar} border-r ${themeClasses.border} flex flex-col`}>
+    <div className={`w-full h-full ${themeClasses.sidebar} border-r ${themeClasses.border} flex flex-col relative`}>
+      {/* Close Button - Top Right Corner */}
+      {showCloseButton && (
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          title="Close"
+        >
+          <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+        </button>
+      )}
+
       {/* Header */}
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+      <div className={`p-6 border-b border-gray-200 dark:border-gray-700 ${showCloseButton ? 'pr-16' : ''}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-lg ${themeClasses.primary} bg-opacity-10`}>
@@ -76,7 +97,16 @@ const Sidebar: React.FC = () => {
             </div>
             <h1 className="text-xl font-semibold">Notes</h1>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              title="Settings"
+            >
+              <Settings className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+            </button>
+            <ThemeToggle />
+          </div>
         </div>
       </div>
 
@@ -148,6 +178,12 @@ const Sidebar: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Settings Modal */}
+      <SettingsModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+      />
     </div>
   );
 };

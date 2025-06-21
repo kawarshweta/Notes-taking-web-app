@@ -175,7 +175,7 @@ Monthly Progress Reviews:
     updatedAt: '2024-09-22T04:00:00Z',
     isArchived: false,
   },
-];
+  ];
 
 const initialState: AppState = {
   notes: defaultNotes,
@@ -190,6 +190,9 @@ const initialState: AppState = {
   },
   isCreatingNote: false,
   editingNote: null,
+  sortBy: 'updated',
+  autoSave: true,
+  compactView: false,
 };
 
 const notesSlice = createSlice({
@@ -288,6 +291,27 @@ const notesSlice = createSlice({
         state.selectedNoteId = state.notes[0].id;
       }
     },
+    setSortBy: (state, action: PayloadAction<'updated' | 'created' | 'alphabetical' | 'tags'>) => {
+      state.sortBy = action.payload;
+    },
+    setAutoSave: (state, action: PayloadAction<boolean>) => {
+      state.autoSave = action.payload;
+    },
+    setCompactView: (state, action: PayloadAction<boolean>) => {
+      state.compactView = action.payload;
+    },
+    importNotes: (state, action: PayloadAction<Note[]>) => {
+      state.notes = action.payload;
+      state.selectedNoteId = action.payload[0]?.id || null;
+    },
+    clearAllData: (state) => {
+      state.notes = [];
+      state.selectedNoteId = null;
+      state.searchQuery = '';
+      state.selectedTag = null;
+      state.isCreatingNote = false;
+      state.editingNote = null;
+    },
   },
 });
 
@@ -305,6 +329,11 @@ export const {
   startCreatingNote,
   setEditingNote,
   cancelEditing,
+  setSortBy,
+  setAutoSave,
+  setCompactView,
+  importNotes,
+  clearAllData,
 } = notesSlice.actions;
 
 export default notesSlice.reducer;

@@ -1,3 +1,316 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* TipTap Editor Styles */
+.ProseMirror {
+  outline: none;
+  font-family: inherit;
+  line-height: 1.6;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+}
+
+.ProseMirror blockquote {
+  border-left: 4px solid #e5e7eb;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+}
+
+.dark .ProseMirror blockquote {
+  border-left-color: #374151;
+}
+
+.ProseMirror code {
+  background-color: #f3f4f6;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.875em;
+}
+
+.dark .ProseMirror code {
+  background-color: #374151;
+}
+
+.ProseMirror pre {
+  background-color: #f3f4f6;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.dark .ProseMirror pre {
+  background-color: #374151;
+}
+
+.ProseMirror ul, .ProseMirror ol {
+  padding-left: 1.5rem;
+  margin: 1rem 0;
+  list-style-position: outside;
+}
+
+.ProseMirror li {
+  margin: 0.25rem 0;
+}
+
+/* Custom List Styles - Data Attributes */
+.ProseMirror ul[data-list-style="disc"],
+.ProseMirror ul.list-style-disc {
+  list-style-type: disc !important;
+}
+
+.ProseMirror ul[data-list-style="circle"],
+.ProseMirror ul.list-style-circle {
+  list-style-type: circle !important;
+}
+
+.ProseMirror ul[data-list-style="square"],
+.ProseMirror ul.list-style-square {
+  list-style-type: square !important;
+}
+
+.ProseMirror ol[data-list-style="decimal"],
+.ProseMirror ol.list-style-decimal {
+  list-style-type: decimal !important;
+}
+
+.ProseMirror ol[data-list-style="lower-alpha"],
+.ProseMirror ol.list-style-lower-alpha {
+  list-style-type: lower-alpha !important;
+}
+
+.ProseMirror ol[data-list-style="upper-alpha"],
+.ProseMirror ol.list-style-upper-alpha {
+  list-style-type: upper-alpha !important;
+}
+
+.ProseMirror ol[data-list-style="lower-roman"],
+.ProseMirror ol.list-style-lower-roman {
+  list-style-type: lower-roman !important;
+}
+
+.ProseMirror ol[data-list-style="upper-roman"],
+.ProseMirror ol.list-style-upper-roman {
+  list-style-type: upper-roman !important;
+}
+
+/* Additional List Styles */
+.ProseMirror ul[data-list-style="none"],
+.ProseMirror ul.list-style-none {
+  list-style-type: none !important;
+}
+
+.ProseMirror ol[data-list-style="none"],
+.ProseMirror ol.list-style-none {
+  list-style-type: none !important;
+}
+
+/* Nested List Styling */
+.ProseMirror ul ul, .ProseMirror ol ol, .ProseMirror ul ol, .ProseMirror ol ul {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.ProseMirror li > p {
+  margin: 0;
+}
+
+/* Enhanced List Styling */
+.ProseMirror .custom-bullet-list {
+  padding-left: 1.5rem;
+  margin: 1rem 0;
+  list-style-position: outside;
+}
+
+.ProseMirror .custom-ordered-list {
+  padding-left: 1.5rem;
+  margin: 1rem 0;
+  list-style-position: outside;
+}
+
+.ProseMirror .custom-bullet-list li,
+.ProseMirror .custom-ordered-list li {
+  margin: 0.25rem 0;
+  padding-left: 0.25rem;
+  display: list-item;
+}
+
+/* Force list styles to show */
+.ProseMirror ul[style*="list-style-type"] {
+  list-style-position: outside !important;
+}
+
+.ProseMirror ol[style*="list-style-type"] {
+  list-style-position: outside !important;
+}
+
+/* Override any conflicting styles */
+.ProseMirror ul li {
+  list-style: inherit !important;
+}
+
+.ProseMirror ol li {
+  list-style: inherit !important;
+}
+
+/* Ensure bullets are visible */
+.ProseMirror ul {
+  list-style: disc outside !important;
+}
+
+.ProseMirror ul[style*="circle"] {
+  list-style: circle outside !important;
+}
+
+.ProseMirror ul[style*="square"] {
+  list-style: square outside !important;
+}
+
+.ProseMirror ol {
+  list-style: decimal outside !important;
+}
+
+.ProseMirror ol[style*="lower-alpha"] {
+  list-style: lower-alpha outside !important;
+}
+
+.ProseMirror ol[style*="upper-alpha"] {
+  list-style: upper-alpha outside !important;
+}
+
+.ProseMirror ol[style*="lower-roman"] {
+  list-style: lower-roman outside !important;
+}
+
+.ProseMirror ol[style*="upper-roman"] {
+  list-style: upper-roman outside !important;
+}
+
+/* List Item Indentation Visual Feedback */
+.ProseMirror .ProseMirror-selectednode {
+  outline: 2px solid #68D391;
+}
+
+/* Improve list item spacing */
+.ProseMirror li {
+  line-height: 1.6;
+}
+
+/* Style for deeply nested lists */
+.ProseMirror ul ul ul, .ProseMirror ol ol ol {
+  margin: 0.25rem 0;
+}
+
+/* Better visual hierarchy for nested lists */
+.ProseMirror ul ul {
+  list-style-type: circle;
+}
+
+.ProseMirror ul ul ul {
+  list-style-type: square;
+}
+
+.ProseMirror ol ol {
+  list-style-type: lower-alpha;
+}
+
+.ProseMirror ol ol ol {
+  list-style-type: lower-roman;
+}
+
+.ProseMirror h1, .ProseMirror h2, .ProseMirror h3 {
+  font-weight: bold;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.ProseMirror h1 {
+  font-size: 2rem;
+  line-height: 2.5rem;
+}
+
+.ProseMirror h2 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+.ProseMirror h3 {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+.ProseMirror hr {
+  border: none;
+  border-top: 2px solid #e5e7eb;
+  margin: 2rem 0;
+}
+
+.dark .ProseMirror hr {
+  border-top-color: #374151;
+}
+
+.ProseMirror a {
+  color: #3b82f6;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.ProseMirror a:hover {
+  color: #1d4ed8;
+}
+
+.dark .ProseMirror a {
+  color: #60a5fa;
+}
+
+.dark .ProseMirror a:hover {
+  color: #93c5fd;
+}
+
+/* Task List Styles */
+.ProseMirror ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+
+.ProseMirror ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  margin: 0.5rem 0;
+}
+
+.ProseMirror ul[data-type="taskList"] li > label {
+  flex: 0 0 auto;
+  margin-right: 0.5rem;
+  user-select: none;
+}
+
+.ProseMirror ul[data-type="taskList"] li > div {
+  flex: 1 1 auto;
+}
+
+.ProseMirror ul[data-type="taskList"] input[type="checkbox"] {
+  cursor: pointer;
+}
+
+/* Text Alignment */
+.ProseMirror [data-text-align="left"] {
+  text-align: left;
+}
+
+.ProseMirror [data-text-align="center"] {
+  text-align: center;
+}
+
+.ProseMirror [data-text-align="right"] {
+  text-align: right;
+}

@@ -6,6 +6,12 @@ export const getThemeClasses = (theme: Theme) => {
     purple: 'text-purple-600 dark:text-purple-400',
     green: 'text-green-600 dark:text-green-400',
     orange: 'text-orange-600 dark:text-orange-400',
+    pink: 'text-pink-600 dark:text-pink-400',
+    indigo: 'text-indigo-600 dark:text-indigo-400',
+    teal: 'text-teal-600 dark:text-teal-400',
+    red: 'text-red-600 dark:text-red-400',
+    yellow: 'text-yellow-600 dark:text-yellow-400',
+    cyan: 'text-cyan-600 dark:text-cyan-400',
   };
 
   const primaryBgClasses = {
@@ -13,12 +19,23 @@ export const getThemeClasses = (theme: Theme) => {
     purple: 'bg-purple-600',
     green: 'bg-green-600',
     orange: 'bg-orange-600',
+    pink: 'bg-pink-600',
+    indigo: 'bg-indigo-600',
+    teal: 'bg-teal-600',
+    red: 'bg-red-600',
+    yellow: 'bg-yellow-600',
+    cyan: 'bg-cyan-600',
   };
 
   const fontClasses = {
-    inter: 'font-sans',
-    roboto: 'font-sans',
-    system: 'font-sans',
+    inter: 'font-inter',
+    roboto: 'font-roboto',
+    system: 'font-system',
+    'open-sans': 'font-open-sans',
+    'source-sans': 'font-source-sans',
+    poppins: 'font-poppins',
+    lato: 'font-lato',
+    montserrat: 'font-montserrat',
   };
 
   return {
